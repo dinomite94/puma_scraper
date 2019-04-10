@@ -73,22 +73,3 @@ end'''})
 
         with open('links.json', 'w') as f:
             f.write(json.dumps(links))
-
-        """
-        for link in links:
-            yield response.follow(link, callback=self.parse_profile)
-        """
-
-    def parse_profile(self, response):
-        pass
-        """
-        try:
-            body = response.body_as_unicode()
-            item = json.loads(IndexSpider.profile_data_extractor.search(body).group(1))
-            item['table_type'] = 'weltklassejungs_de'
-            yield item
-        except:
-            e = sys.exc_info()
-            logging.getLogger().warning('Problems with ' + response.url)
-            logging.getLogger().warning(e)
-        """
