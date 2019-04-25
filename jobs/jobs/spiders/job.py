@@ -30,9 +30,10 @@ class JobSpider(scrapy.Spider):
                 callback=self.parse,
                 endpoint='execute',
                 args={'lua_source': '''function main(splash, args)
+  splash:set_viewport_size(1920, 1080)
   assert(splash:go(args.url))
-  splash:set_viewport_full()
   splash:wait(0.5)
+  splash:set_viewport_full()
   
   splash:select('.accept-cookies-button').mouse_click()
   splash:set_viewport_full()
