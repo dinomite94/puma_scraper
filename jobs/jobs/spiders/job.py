@@ -7,8 +7,11 @@ import scrapy
 import sys
 from scrapy_splash import SplashRequest
 
-with open('out/links.json', 'r') as f:
-    start_urls = json.load(f)
+try:
+    with open('out/links.json', 'r') as f:
+        start_urls = json.load(f)
+except:
+    start_urls = []
 
 
 class JobSpider(scrapy.Spider):
@@ -32,9 +35,9 @@ class JobSpider(scrapy.Spider):
                 args={'lua_source': '''function main(splash, args)
   splash:set_viewport_size(1920, 1080)
   assert(splash:go(args.url))
-  splash:wait(0.5)
+  splash:wait(1)
   splash:set_viewport_full()
-  
+
   splash:select('.accept-cookies-button').mouse_click()
   splash:set_viewport_full()
   splash:wait(0.1)
@@ -52,6 +55,9 @@ end'''})
             job_id = JobSpider.url_id_extractor.search(response.url).group(1)
             with open('out/jobs/' + job_id + '.png', 'wb') as f:
                 f.write(image_data)
+
+            with open('out/jobs/' + job_id + '.html', 'w') as f:
+                f.write(response.data['html'])
 
             data = json.loads(JobSpider.json_extractor.search(response.data['html']).group(1))
             data['date_location'] = response.data['date_location']
