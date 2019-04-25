@@ -1,5 +1,6 @@
 Pipfile.lock
 .vscode/
+jobs/out/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
