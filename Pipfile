@@ -8,6 +8,8 @@ verify_ssl = true
 [packages]
 scrapy = "*"
 scrapy-splash = "*"
+xlsxwriter = "*"
+beautifulsoup4 = "*"
 
 [requires]
 python_version = "3.6"

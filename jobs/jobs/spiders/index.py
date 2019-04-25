@@ -71,5 +71,5 @@ end'''})
         links = response.data
         logging.getLogger().info('{} Links found'.format(len(links)))
 
-        with open('links.json', 'w') as f:
+        with open('out/links.json', 'w') as f:
             f.write(json.dumps(links))

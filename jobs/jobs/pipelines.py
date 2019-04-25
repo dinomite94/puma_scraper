@@ -27,7 +27,7 @@ class JobsPipeline(object):
         :return: file
         """
         if table_type not in self.files:
-            filename = table_type + ".jl"
+            filename = 'out/' + table_type + ".jl"
             logging.getLogger().info("Opening file %s." % filename)
             self.files[table_type] = open(table_type + '.jl', 'w')
         return self.files[table_type]
