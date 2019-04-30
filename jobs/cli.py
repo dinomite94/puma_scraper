@@ -1,5 +1,7 @@
 #!/usr/local/bin/python3
 import argparse
+import excel_exporter
+import extractor
 import json
 import os
 import shutil
@@ -25,10 +27,23 @@ def crawl(args):
 
 
 def process(args):
+    data = []
+
     for filename in os.listdir(out_jobs_dir):
-        full_filename = os.path.join(out_jobs_dir, filename)
-        with open(full_filename, 'r') as f:
-            data = json.load(f)
+        if str.endswith(filename, '.json'):
+            full_filename = os.path.join(out_jobs_dir, filename)
+            with open(full_filename, 'r') as f:
+                fileid = os.path.basename('.'.join(filename.split('.')[:-1]))
+                row = extractor.processJSON(json.load(f))
+                row.extend((
+                    excel_exporter.HyperLink(text='Screenshot', link='jobs/{}.png'.format(fileid)),
+                    excel_exporter.HyperLink(text='Lokal', link='jobs/{}.html'.format(fileid)),
+                    excel_exporter.HyperLink(text='Online', link='https://about.puma.com/en/jobs/r874'))
+                )
+
+                data.append(row)
+
+    excel_exporter.export(data)
 
 
 cmds = {

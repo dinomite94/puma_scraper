@@ -70,14 +70,10 @@ def processJobTitle(jobTitle):
     # If a "&" occured then insert that a sign was used, else insert that the words were written                  
     regex = re.search(r"[\s^](&|und|and|y|et|e|en|i|ve)[\s$]", jobTitle, re.IGNORECASE)    
     if regex:
-        andValue = regex.group(1)        
-        if andValue == "&":
-            andValue = "Zeichen"
-        else:
-            andValue = "Ausgeschrieben"        
+        andValue = 0 if regex.group(1) == "&" else 1
     else:
         andValue = 99
-        
+
     # Check whether m/w or w/m is within the job title
     # Check whether m/f or f/m is within the job title
     # Check whether h/f or f/h is within the job title
@@ -103,8 +99,16 @@ def processJobTitle(jobTitle):
     #  Is "(" within the job title or not
     bracketValue = executeRegExForOccuranceChecks(r"\(", jobTitle)
 
-    
-    return (jobTitleLength, juniorOrSenior, teamHead, ecom, internship, globOrInternational, andValue, genderValue, commaValue, dashValue, buValue, wantedValue, pumaValue, bracketValue)
+    # N to W
+    retList = [jobTitleLength, juniorOrSenior, teamHead, ecom, internship, None, commaValue, dashValue, globOrInternational, buValue]
+    retList.extend([None for _ in range(8)])
+    # AF to AI
+    retList.extend((genderValue, wantedValue, pumaValue, bracketValue))
+    retList.extend([None for _ in range(16)])
+    # AZ
+    retList.append(andValue)
+
+    return retList
 
 
 def processJobLocation(jobLocation):
@@ -117,7 +121,7 @@ def processJobLocation(jobLocation):
     city = address["addressLocality"]
     country = address["addressCountry"]
 
-    return (city, country)
+    return (city, None, country)
 
 
 def processQualifications(qualifications):
@@ -151,16 +155,16 @@ def processJSON(rawJsonFile):
     returnList = list()
     returnList.append(jobtitle)
     returnList.append(dateLocation)
-    for value in jobLocationInformation:
-        returnList.append(value)
-    for value in jobTitleInformation:
-        returnList.append(value)
-    print(returnList)        
+    returnList.extend(jobLocationInformation)
+    returnList.extend([None for _ in range(7)])
+    returnList.extend(jobTitleInformation)
+    print(returnList)
     print(dayPosted) # Day posted is currently not within the list
     
     return returnList
     
 
-rawJsonFile = openJSON("/home/dino/Schreibtisch/projects/sabrina/puma/jobs/JSON files/r5239_internfinance.json")
-outputJsonFile = processJSON(rawJsonFile)
+if __name__ == "__main__":
+    rawJsonFile = openJSON("/home/dino/Schreibtisch/projects/sabrina/puma/jobs/JSON files/r5239_internfinance.json")
+    outputJsonFile = processJSON(rawJsonFile)
 
