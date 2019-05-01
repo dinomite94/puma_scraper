@@ -1,0 +1,20 @@
+version: '3.2'
+services:
+  crawler:
+    build: ./jobs
+    networks:
+      - splash
+    volumes:
+      - type: bind
+        source: ./jobs/out
+        target: /puma/out
+  splash:
+    image: "scrapinghub/splash"
+    ports:
+      - "8050:8050"
+    networks:
+        - splash
+
+networks:
+  splash:
+    driver: bridge

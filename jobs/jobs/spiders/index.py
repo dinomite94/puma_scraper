@@ -6,11 +6,17 @@ import scrapy
 import sys
 from scrapy_splash import SplashRequest
 
+try:
+    with open('out/start-urls.json', 'r') as f:
+        start_urls = json.load(f)
+except:
+    start_urls = ['https://about.puma.com/en/careers/job-openings#jobfinder']
+
 
 class IndexSpider(scrapy.Spider):
     name = 'index'
     allowed_domains = ['about.puma.com']
-    start_urls = ['https://about.puma.com/en/careers/job-openings#jobfinder']
+    start_urls = start_urls
 
     custom_settings = {
         # WARNING, INFO, DEBUG

@@ -10,7 +10,7 @@ HyperLink = namedtuple('HyperLink', ['text', 'link'])
 
 root_dir = os.path.dirname(os.path.realpath(__file__))
 template_xlsx = os.path.join(root_dir, 'templates/Auswertung Untersuchungskriterien.xlsx')
-output_xlsx = os.path.join(root_dir, 'out/Auswertung Untersuchungskriterien.xlsx')
+output_xlsx = os.path.join(root_dir, 'out/jobs/Auswertung Untersuchungskriterien.xlsx')
 
 
 def export(data_table):

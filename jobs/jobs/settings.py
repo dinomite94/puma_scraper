@@ -94,7 +94,7 @@ AUTOTHROTTLE_DEBUG = False
 #HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
 HTTPCACHE_STORAGE = 'scrapy_splash.SplashAwareFSCacheStorage'
 
-SPLASH_URL = 'http://127.0.0.1:8050'
+SPLASH_URL = 'http://splash:8050'
 DUPEFILTER_CLASS = 'scrapy_splash.SplashAwareDupeFilter'
 
 #SPLASH_COOKIES_DEBUG = False

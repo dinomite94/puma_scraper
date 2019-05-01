@@ -1,0 +1,6 @@
+scrapy
+scrapy-splash
+beautifulsoup4
+et-xmlfile
+jdcal
+openpyxl

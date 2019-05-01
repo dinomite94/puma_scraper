@@ -4,6 +4,7 @@ import excel_exporter
 import extractor
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -14,8 +15,25 @@ out_dir = os.path.join(root_dir, 'out')
 out_jobs_dir = os.path.join(out_dir, 'jobs')
 
 
+def execute(cmd):
+    popen = subprocess.Popen(cmd, stdout=subprocess.PIPE, universal_newlines=True)
+    for stdout_line in iter(popen.stdout.readline, ""):
+        print(stdout_line) 
+    popen.stdout.close()
+    return_code = popen.wait()
+    if return_code:
+        raise subprocess.CalledProcessError(return_code, cmd)
+
+
+def run(args):
+    execute(['scrapy', 'crawl', 'index'])
+    execute(['scrapy', 'crawl', 'job'])
+    process(args)
+    compress(args)
+
+
 def clean(args):
-    pass
+    raise NotImplementedError()
 
 
 def compress(args):
@@ -23,7 +41,7 @@ def compress(args):
 
 
 def crawl(args):
-    pass
+    raise NotImplementedError()
 
 
 def process(args):
@@ -36,8 +54,8 @@ def process(args):
                 fileid = os.path.basename('.'.join(filename.split('.')[:-1]))
                 row = extractor.processJSON(json.load(f))
                 row.extend((
-                    excel_exporter.HyperLink(text='Screenshot', link='jobs/{}.png'.format(fileid)),
-                    excel_exporter.HyperLink(text='Lokal', link='jobs/{}.html'.format(fileid)),
+                    excel_exporter.HyperLink(text='Screenshot', link='{}.png'.format(fileid)),
+                    excel_exporter.HyperLink(text='Lokal', link='{}.html'.format(fileid)),
                     excel_exporter.HyperLink(text='Online', link='https://about.puma.com/en/jobs/r874'))
                 )
 
@@ -47,6 +65,7 @@ def process(args):
 
 
 cmds = {
+    'run': run,
     'clean': clean,
     'compress': compress,
     'crawl': crawl,
@@ -59,6 +78,8 @@ if __name__ == "__main__":
     subparsers = parser.add_subparsers(help='sub-command help')
     subparsers.required = False
     
+    subparsers.add_parser('run', help='Run crawler and process')
+    subparsers.add_parser('fix-html', help='Run crawler and process')
     subparsers.add_parser('clean', help='Clean the output directory')
     subparsers.add_parser('compress', help='Create archive of output directory')
 

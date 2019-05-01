@@ -57,7 +57,9 @@ end'''})
                 f.write(image_data)
 
             with open('out/jobs/' + job_id + '.html', 'w') as f:
-                f.write(response.data['html'])
+                html = re.sub(r'(["\'(])\/(css|fonts|js)', r'\1assets/\2', response.data['html'])
+                html = re.sub(r'\/-\/', 'https://about.puma.com/-/', html)
+                f.write(html)
 
             data = json.loads(JobSpider.json_extractor.search(response.data['html']).group(1))
             data['date_location'] = response.data['date_location']
