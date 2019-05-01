@@ -1,5 +1,6 @@
 #!/usr/local/bin/python3
 from openpyxl import workbook, load_workbook
+from openpyxl.styles import Alignment
 from openpyxl.drawing.image import Image
 
 from collections import namedtuple
@@ -30,6 +31,11 @@ def export(data_table):
                 cell.style = 'Hyperlink'
             else:
                 cell.value = data
+
+            if isinstance(data, int) or isinstance(data, float):
+                cell.alignment = Alignment(horizontal='right')
+            else:
+                cell.alignment = Alignment(horizontal='left')
 
             column_num += 1
 

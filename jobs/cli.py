@@ -56,8 +56,8 @@ def process(args):
                 row.extend((
                     excel_exporter.HyperLink(text='Screenshot', link='{}.png'.format(fileid)),
                     excel_exporter.HyperLink(text='Lokal', link='{}.html'.format(fileid)),
-                    excel_exporter.HyperLink(text='Online', link='https://about.puma.com/en/jobs/r874'))
-                )
+                    excel_exporter.HyperLink(text='Online', link='https://about.puma.com/en/jobs/{}'.format(fileid))
+                ))
 
                 data.append(row)
 

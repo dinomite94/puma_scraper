@@ -3,6 +3,15 @@
 import json
 import re
 
+imagePersonGenderByDateLocation = {
+    "Retail Store": 0,
+    "Information Technology": 0,
+    "Design": 1,
+    "E-Commerce": 0,
+    "Retail Corporate": 1
+}
+
+
 juniorOrSeniorMap = {
     "junior" : 1,
     "jr.": 2,
@@ -46,9 +55,25 @@ def executeRegExForOccuranceChecks(regex, jobTitle):
         return 1    
     return 0
 
+def processLayoutInformation(rawJsonFile):
+    # {0, 1, 2} => {oben, mitte, unten}
+    imagePosition = 0
+
+    # {0, 1} => {nicht ganz, ganz}
+    imageSize = 1
+
+    # {0, 1} => {nicht neben Text, neben Text}
+    imageTextRatio = 1
+
+    imagePersonCount = 1
+    imagePersonGender = imagePersonGenderByDateLocation.get(rawJsonFile['date_location'], None)
+
+    return (imagePosition, imageSize, imageTextRatio, imagePersonCount, imagePersonGender)
 
 def processJobTitle(jobTitle):    
-    jobTitleLength = len(jobTitle)        
+    # {0, 1, 2} => {links, mittig, rechts} über Text
+    jobTitlePosition = 1
+    jobTitleLength = len(jobTitle)
     
     # Check whether Junior/Jr./Jr or Senior/Sr./Sr is within the job title
     juniorOrSenior = executeRegExWithMapping(r"\b(junior\b|jr\.|jr\b|senior\b|sr\.|sr\b)", jobTitle, juniorOrSeniorMap)    
@@ -100,7 +125,7 @@ def processJobTitle(jobTitle):
     bracketValue = executeRegExForOccuranceChecks(r"\(", jobTitle)
 
     # N to W
-    retList = [jobTitleLength, juniorOrSenior, teamHead, ecom, internship, None, commaValue, dashValue, globOrInternational, buValue]
+    retList = [jobTitlePosition, None,jobTitleLength, juniorOrSenior, teamHead, ecom, internship, None, commaValue, dashValue, globOrInternational, buValue]
     # X to AA
     retList.extend((genderValue, wantedValue, pumaValue, bracketValue))
     retList.extend([None for _ in range(7)])
@@ -145,6 +170,7 @@ def openJSON(pathToJSON):
 
 def processJSON(rawJsonFile):
     jobtitle = rawJsonFile["title"]
+    layoutInformation = processLayoutInformation(rawJsonFile)
     jobTitleInformation = processJobTitle(rawJsonFile["title"])      
     jobLocationInformation = processJobLocation(rawJsonFile["jobLocation"])
 
@@ -157,7 +183,7 @@ def processJSON(rawJsonFile):
     returnList.append(jobtitle)
     returnList.append(dateLocation)
     returnList.extend(jobLocationInformation)
-    returnList.extend([None for _ in range(7)])
+    returnList.extend(layoutInformation)
     returnList.extend(jobTitleInformation)
     print(returnList)
     
