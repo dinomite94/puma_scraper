@@ -101,26 +101,27 @@ def processJobTitle(jobTitle):
 
     # N to W
     retList = [jobTitleLength, juniorOrSenior, teamHead, ecom, internship, None, commaValue, dashValue, globOrInternational, buValue]
-    retList.extend([None for _ in range(8)])
-    # AF to AI
+    # X to AA
     retList.extend((genderValue, wantedValue, pumaValue, bracketValue))
-    retList.extend([None for _ in range(16)])
-    # AZ
+    retList.extend([None for _ in range(7)])
+    # AI
     retList.append(andValue)
 
     return retList
 
 
 def processJobLocation(jobLocation):
-    #TODO: Extract information about:
-    #       - the city
-    #       - the province (Information is not available within the JSON-file)
-    #       - the country
-    # and return it as a list.
+    #Extracts information about:
+    #   - the city
+    #   - the province (Information is not available within the JSON-file)
+    #   - the country
+    # and returns a list.
     address = jobLocation["address"]
     city = address["addressLocality"]
     country = address["addressCountry"]
 
+    # returns the following list: (city, province, country) 
+    # Province is not located within the JSON-file and must therefore be obtained in a different way.
     return (city, None, country)
 
 
@@ -150,7 +151,7 @@ def processJSON(rawJsonFile):
     #qualifications = processQualifications(rawJsonFile["qualifications"])
     #responsibilities = processResponsibilities(rawJsonFile["responsibilities"])
 
-    dayPosted = rawJsonFile["datePosted"]
+    dayPosted = rawJsonFile["datePosted"] # Day posted is currently not within the list
     dateLocation = rawJsonFile["date_location"]
     returnList = list()
     returnList.append(jobtitle)
@@ -159,7 +160,6 @@ def processJSON(rawJsonFile):
     returnList.extend([None for _ in range(7)])
     returnList.extend(jobTitleInformation)
     print(returnList)
-    print(dayPosted) # Day posted is currently not within the list
     
     return returnList
     
