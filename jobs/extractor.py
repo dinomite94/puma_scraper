@@ -10,8 +10,6 @@ imagePersonGenderByDateLocation = {
     "E-Commerce": 0,
     "Retail Corporate": 1
 }
-
-
 juniorOrSeniorMap = {
     "junior" : 1,
     "jr.": 2,
@@ -47,7 +45,6 @@ def executeRegExWithMapping(regex, jobTitle, valuemap):
         returnValue = 99
     return returnValue
 
-
 def executeRegExForOccuranceChecks(regex, jobTitle):
     # Returns 1 if something was found, else 0
     searchValue = re.search(regex, jobTitle, re.IGNORECASE)    
@@ -71,7 +68,7 @@ def processLayoutInformation(rawJsonFile):
     return (imagePosition, imageSize, imageTextRatio, imagePersonCount, imagePersonGender)
 
 def processJobTitle(jobTitle):    
-    # {0, 1, 2} => {links, mittig, rechts} über Text
+    # {0, 1, 2} => {links, mittig, rechts} ueber Text
     jobTitlePosition = 1
     jobTitleLength = len(jobTitle)
     
@@ -150,16 +147,74 @@ def processJobLocation(jobLocation):
     return (city, None, country)
 
 
-def processQualifications(qualifications):
-    print(qualifications)
+def getNumberOfListElements(qualifications):
+    listElements = re.findall(r"<li>", qualifications, re.MULTILINE)
+    return len(listElements)
 
-    return qualifications
+
+def isListWithBulletPoints(qualifications):
+    listElements = re.search(r"<li>", qualifications, re.MULTILINE)    
+    if listElements:
+        return 1
+    return 0
+
+
+def isSomethingBoldWithinBulletPoint(qualifications):
+    isBold = re.search(r"<span>", qualifications, re.MULTILINE)
+    if isBold:
+        return 1
+    return 0
+
+
+def getNumberOfWordsForBulletPoint(qualifications):
+    listWithoutUlElement = re.split(r"<ul>", qualifications, re.MULTILINE)
+    listWithoutUlEndElement = re.split(r"<\/ul>", listWithoutUlElement[1], re.MULTILINE)
+    listWithoutLiElements = re.split(r"<li>", listWithoutUlEndElement[0], re.MULTILINE|re.DOTALL)  
+    returnList = []
+    for listElement in listWithoutLiElements:
+        wordCount = 0
+        if listElement != "":            
+            wordList = re.findall(r"[A-Za-z0-9]+|[^A-Za-z0-9 ]", listElement, re.MULTILINE)
+            for word in wordList:
+                if re.match(r"[A-Za-z0-9]+", word) and word != "li" and word != "span":
+                    wordCount += 1                    
+            returnList.append(wordCount)
+    if(len(returnList) < 20):
+        emptyCells = 20 - len(returnList)
+        for _ in range(0, emptyCells, 1):
+            returnList.append(0)
+    print(returnList)
+    return returnList
+
+
+def processQualifications(qualifications):
+    returnList = []
+
+    #TODO: Order the list elements
+
+    numberOfListElements = getNumberOfListElements(qualifications)
+    isBulletPointOccuring = isListWithBulletPoints(qualifications)
+    wordList = getNumberOfWordsForBulletPoint(qualifications)
+
+    returnList.append(numberOfListElements)
+    returnList.append(isBulletPointOccuring)
+    return returnList
 
 
 def processResponsibilities(responsibilities):
-    print(responsibilities)
+    returnList = []
 
-    return responsibilities
+
+    #TODO: Order the list elements
+
+    numberOfListElements = getNumberOfListElements(responsibilities)
+    isBulletPointOccuring = isListWithBulletPoints(responsibilities)
+    wordList = getNumberOfWordsForBulletPoint(responsibilities)
+
+    returnList.append(numberOfListElements)
+    returnList.append(isBulletPointOccuring)
+    return returnList
+
 
 
 def openJSON(pathToJSON):    
@@ -174,8 +229,11 @@ def processJSON(rawJsonFile):
     jobTitleInformation = processJobTitle(rawJsonFile["title"])      
     jobLocationInformation = processJobLocation(rawJsonFile["jobLocation"])
 
-    #qualifications = processQualifications(rawJsonFile["qualifications"])
-    #responsibilities = processResponsibilities(rawJsonFile["responsibilities"])
+    #TODO: Order the list elements of qualifications and responsibilities
+    #TODO: Calculate the Verhaeltnis Anzahl Stichpunkte Talent
+    #TODO: Test, whether the word calculation works properly
+    qualifications = processQualifications(rawJsonFile["qualifications"])
+    responsibilities = processResponsibilities(rawJsonFile["responsibilities"])
 
     dayPosted = rawJsonFile["datePosted"] # Day posted is currently not within the list
     dateLocation = rawJsonFile["date_location"]
@@ -185,12 +243,12 @@ def processJSON(rawJsonFile):
     returnList.extend(jobLocationInformation)
     returnList.extend(layoutInformation)
     returnList.extend(jobTitleInformation)
-    print(returnList)
+    # print(returnList)
     
     return returnList
     
 
 if __name__ == "__main__":
-    rawJsonFile = openJSON("/home/dino/Schreibtisch/projects/sabrina/puma/jobs/JSON files/r5239_internfinance.json")
+    rawJsonFile = openJSON("/home/dino/Desktop/puma/jobs/out/JSON files/r874.json")
     outputJsonFile = processJSON(rawJsonFile)
 
