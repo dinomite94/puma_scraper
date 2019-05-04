@@ -53,11 +53,9 @@ def process(args):
             with open(full_filename, 'r') as f:
                 fileid = os.path.basename('.'.join(filename.split('.')[:-1]))
                 row = extractor.processJSON(json.load(f))
-                row.extend((
-                    excel_exporter.HyperLink(text='Screenshot', link='{}.png'.format(fileid)),
-                    excel_exporter.HyperLink(text='Lokal', link='{}.html'.format(fileid)),
-                    excel_exporter.HyperLink(text='Online', link='https://about.puma.com/en/jobs/{}'.format(fileid))
-                ))
+                row['screenshot_link'] = excel_exporter.HyperLink(text='Screenshot', link='{}.png'.format(fileid))
+                row['local_link'] = excel_exporter.HyperLink(text='Lokal', link='{}.html'.format(fileid))
+                row['online_link'] = excel_exporter.HyperLink(text='Online', link='https://about.puma.com/en/jobs/{}'.format(fileid))
 
                 data.append(row)
 

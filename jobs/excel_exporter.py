@@ -18,26 +18,42 @@ def export(data_table):
     xfile = load_workbook(template_xlsx)
     sheet = xfile.get_sheet_by_name('Sheet1')
 
+    column_map = {}
+
+    for data in xfile.defined_names.definedName:
+        for title, coord in data.destinations:
+            if title == 'Sheet1':
+                column_map[data.name] = sheet[coord][0].column
+
+    def writeCell(cell, data):
+        if isinstance(data, list):
+            row_num = cell.row
+            column_num = cell.column
+
+            for el in data:
+                writeCell(sheet.cell(row=row_num, column=column_num), el)
+                column_num += 1
+
+            return
+        elif isinstance(data, HyperLink):
+            cell.value = data.text
+            cell.hyperlink = data.link
+            cell.style = 'Hyperlink'
+        else:
+            cell.value = data
+
+        if isinstance(data, int) or isinstance(data, float):
+            cell.alignment = Alignment(horizontal='right')
+        else:
+            cell.alignment = Alignment(horizontal='left')
+
+
     row_num = 5
     for row in data_table:
-        column_num = 2
+        for key, data in row.items():
+            cell = sheet.cell(row=row_num, column=column_map[key])
 
-        for data in row:
-            cell = sheet.cell(row=row_num, column=column_num)
-
-            if isinstance(data, HyperLink):
-                cell.value = data.text
-                cell.hyperlink = data.link
-                cell.style = 'Hyperlink'
-            else:
-                cell.value = data
-
-            if isinstance(data, int) or isinstance(data, float):
-                cell.alignment = Alignment(horizontal='right')
-            else:
-                cell.alignment = Alignment(horizontal='left')
-
-            column_num += 1
+            writeCell(cell, data)
 
         row_num += 1
 

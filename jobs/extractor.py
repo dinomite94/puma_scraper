@@ -65,7 +65,13 @@ def processLayoutInformation(rawJsonFile):
     imagePersonCount = 1
     imagePersonGender = imagePersonGenderByDateLocation.get(rawJsonFile['date_location'], None)
 
-    return (imagePosition, imageSize, imageTextRatio, imagePersonCount, imagePersonGender)
+    return {
+        'image_position': imagePosition,
+        'image_size': imageSize,
+        'image_text_ratio': imageTextRatio,
+        'image_person_count': imagePersonCount,
+        'image_person_gender': imagePersonGender,
+    }
 
 def processJobTitle(jobTitle):    
     # {0, 1, 2} => {links, mittig, rechts} ueber Text
@@ -121,15 +127,23 @@ def processJobTitle(jobTitle):
     #  Is "(" within the job title or not
     bracketValue = executeRegExForOccuranceChecks(r"\(", jobTitle)
 
-    # N to W
-    retList = [jobTitlePosition, None,jobTitleLength, juniorOrSenior, teamHead, ecom, internship, None, commaValue, dashValue, globOrInternational, buValue]
-    # X to AA
-    retList.extend((genderValue, wantedValue, pumaValue, bracketValue))
-    retList.extend([None for _ in range(7)])
-    # AI
-    retList.append(andValue)
-
-    return retList
+    return {
+        'job_title_position': jobTitlePosition,
+        'job_title_length': jobTitleLength,
+        'job_title_jr_sr': juniorOrSenior,
+        'job_title_team_head': teamHead,
+        'job_title_ecommerce': ecom,
+        'job_title_intern': internship,
+        'job_title_comma': commaValue,
+        'job_title_dash': dashValue,
+        'job_title_global': globOrInternational,
+        'job_title_abbreviation': buValue,
+        'job_title_gender': genderValue,
+        'job_title_wanted': wantedValue,
+        'job_title_puma': pumaValue,
+        'job_title_paren': bracketValue,
+        'job_title_and': andValue,
+    }
 
 
 def processJobLocation(jobLocation):
@@ -144,7 +158,10 @@ def processJobLocation(jobLocation):
 
     # returns the following list: (city, province, country) 
     # Province is not located within the JSON-file and must therefore be obtained in a different way.
-    return (city, None, country)
+    return {
+        'city': city,
+        'country': country,
+    }
 
 
 def getNumberOfListElements(qualifications):
@@ -194,33 +211,31 @@ def getNumberOfWordsForBulletPoint(qualifications):
 
 
 def processQualifications(qualifications):
-    returnList = []
-
     isBold = isSomethingBoldWithinBulletPoint(qualifications)
     numberOfListElements = getNumberOfListElements(qualifications)
     isBulletPointOccuring = isListWithBulletPoints(qualifications)
     wordList = getNumberOfWordsForBulletPoint(qualifications)
 
-    returnList.append(isBold)
-    returnList.append(numberOfListElements)
-    returnList.append(isBulletPointOccuring)
-    returnList.append(wordList)
-    return returnList
+    return {
+        'talent_bold_text': isBold,
+        'talent_bullet_point_count': numberOfListElements,
+        'talent_bullet_point_layout': isBulletPointOccuring,
+        'talent_bullet_point_word_count': wordList,
+    }
 
 
 def processResponsibilities(responsibilities):
-    returnList = []
-
     isBold = isSomethingBoldWithinBulletPoint(responsibilities)
     numberOfListElements = getNumberOfListElements(responsibilities)
     isBulletPointOccuring = isListWithBulletPoints(responsibilities)
     wordList = getNumberOfWordsForBulletPoint(responsibilities)
 
-    returnList.append(isBold)
-    returnList.append(numberOfListElements)
-    returnList.append(isBulletPointOccuring)
-    returnList.append(wordList)
-    return returnList
+    return {
+        'mission_bold_text': isBold,
+        'mission_bullet_point_count': numberOfListElements,
+        'mission_bullet_point_layout': isBulletPointOccuring,
+        'mission_bullet_point_word_count': wordList,
+    }
 
 
 
@@ -239,54 +254,24 @@ def processJSON(rawJsonFile):
     responsibilities = processResponsibilities(rawJsonFile["responsibilities"])
     qualifications = processQualifications(rawJsonFile["qualifications"])    
 
-    dayPosted = rawJsonFile["datePosted"] # Day posted is currently not within the list
+    dayPosted = rawJsonFile["datePosted"]  # Day posted is currently not within the list
     dateLocation = rawJsonFile["date_location"]
-    returnList = list()
-    returnList.append(jobtitle)
-    returnList.append(dateLocation)
-    returnList.extend(jobLocationInformation)
-    returnList.extend(layoutInformation)
-    returnList.extend(jobTitleInformation)
-    for _ in range(4):
-        returnList.append(None)
-
-
-    # TODO: Information about whether there is a subheader below the mission/talent section is still missing.
-    #       Until this is retrieved, I will put in a None value
-    returnList.append(None)
+    returnDict = {
+        'job_title': jobtitle,
+        'functional_area': dateLocation,
+        **jobLocationInformation, **layoutInformation, **jobTitleInformation,
+        **responsibilities, **qualifications}
 
     # There is only one column which needs to be filled. That is why I am checking if one of the two variables contains a 1 or 0
-    if responsibilities[0] == 0 and qualifications[0] == 0:
-        returnList.append(responsibilities[0])
-    elif responsibilities[0] != 0 and qualifications[0] == 0:
-        returnList.append(responsibilities[0])
-    else:
-        returnList.append(qualifications[0])
-    
-    # Appending the number of found bulletpoints of the responsibilities section    
-    returnList.append(responsibilities[1]) 
-    # Appending the number of found bulletpoints of the qualifications section    
-    returnList.append(qualifications[1])    
+    returnDict['mission_talent_bold_text'] = 1 if (returnDict['talent_bold_text'] or returnDict['mission_bold_text']) else 0
+    del returnDict['talent_bold_text']
+    del returnDict['mission_bold_text']
 
     # Number of bulletpoints for responsibilities / number of bulletpoints for qualifications
-    bulletpointRatio = str(responsibilities[1]) + "/" + str(qualifications[1])
-    # Appending the bulletpointRatio between responsibilities and qualifications
-    returnList.append(bulletpointRatio)
+    returnDict['talent_bullet_point_count_ratio'] = str(returnDict['mission_bullet_point_count']) + "/" + str(returnDict['talent_bullet_point_count'])
 
-    # Appending the information whether a bulletpoint occurs within the responsibilities section or not
-    returnList.append(responsibilities[2])
-    # Appending the information whether a bulletpoint occurs within the qualification section or not
-    returnList.append(qualifications[2])
-
-    # Appending the amount of words for each bulletpoint found within the responsibilities/qualifications section
-    for bulletPoint in responsibilities[3]:
-        returnList.append(bulletPoint)
-
-    for bulletPoint in qualifications[3]:
-        returnList.append(bulletPoint)
-
-    print(returnList)    
-    return returnList
+    print(returnDict)
+    return returnDict
     
 
 if __name__ == "__main__":
