@@ -2,6 +2,7 @@
 
 import json
 import re
+import time
 
 imagePersonGenderByDateLocation = {
     "Retail Store": 0,
@@ -145,7 +146,6 @@ def processJobTitle(jobTitle):
         'job_title_and': andValue,
     }
 
-
 def processJobLocation(jobLocation):
     #Extracts information about:
     #   - the city
@@ -183,28 +183,23 @@ def isSomethingBoldWithinBulletPoint(qualifications):
     return 0
 
 
-def getNumberOfWordsForBulletPoint(qualifications):    
+def getNumberOfWordsForBulletPoint(json, jsonType):    
     # We check whether there is a <ul>-element within the JSON-file or not. 
     # If there is no <ul>-element that means there is no list at all and we return
     # a list with 20 zero values
-    try:
-        returnList = []
-        listWithoutUlElement = re.split(r"<ul>", qualifications, re.MULTILINE|re.DOTALL)
-        listWithoutUlEndElement = re.split(r"<\/ul>", listWithoutUlElement[1], re.MULTILINE|re.DOTALL)
-        listWithoutLiElements = re.split(r"<li>", listWithoutUlEndElement[0], re.MULTILINE|re.DOTALL)          
-        for listElement in listWithoutLiElements:
-            wordCount = 0
-            if listElement != "":            
-                wordList = re.findall(r"[A-Za-z0-9]+|[^A-Za-z0-9 ]", listElement, re.MULTILINE)
-                for word in wordList:
-                    if re.match(r"[A-Za-z0-9]+", word) and word != "li" and word != "span":
-                        wordCount += 1                    
-                returnList.append(wordCount)    
-    except:
-        returnList = []
+    returnList = []
+    listWithoutLiElements = re.findall(r"<li>(.*?)<\/li>", json, flags=re.MULTILINE)
+    for listElement in listWithoutLiElements:
+        wordList = re.findall(r"[\w\&]+", re.sub(r"<[^<]+?>", "", listElement), re.MULTILINE)
+        returnList.append(len(wordList))    
     
-    if(len(returnList) < 20):
-        emptyCells = 20 - len(returnList)
+    if jsonType == "responsibilities":
+        maxLength = 35        
+    else:
+        maxLength = 20
+
+    if(len(returnList) < maxLength):
+        emptyCells = maxLength - len(returnList)
         for _ in range(0, emptyCells, 1):
             returnList.append(0)
     return returnList
@@ -214,7 +209,7 @@ def processQualifications(qualifications):
     isBold = isSomethingBoldWithinBulletPoint(qualifications)
     numberOfListElements = getNumberOfListElements(qualifications)
     isBulletPointOccuring = isListWithBulletPoints(qualifications)
-    wordList = getNumberOfWordsForBulletPoint(qualifications)
+    wordList = getNumberOfWordsForBulletPoint(qualifications, "qualifications")
 
     return {
         'talent_bold_text': isBold,
@@ -228,7 +223,8 @@ def processResponsibilities(responsibilities):
     isBold = isSomethingBoldWithinBulletPoint(responsibilities)
     numberOfListElements = getNumberOfListElements(responsibilities)
     isBulletPointOccuring = isListWithBulletPoints(responsibilities)
-    wordList = getNumberOfWordsForBulletPoint(responsibilities)
+
+    wordList = getNumberOfWordsForBulletPoint(responsibilities, "responsibilities")
 
     return {
         'mission_bold_text': isBold,
@@ -236,7 +232,6 @@ def processResponsibilities(responsibilities):
         'mission_bullet_point_layout': isBulletPointOccuring,
         'mission_bullet_point_word_count': wordList,
     }
-
 
 
 def openJSON(pathToJSON):    
@@ -277,4 +272,3 @@ def processJSON(rawJsonFile):
 if __name__ == "__main__":
     rawJsonFile = openJSON("/home/dino/Desktop/puma/jobs/out/JSON files/r874.json")
     outputJsonFile = processJSON(rawJsonFile)
-
