@@ -166,53 +166,60 @@ def isSomethingBoldWithinBulletPoint(qualifications):
     return 0
 
 
-def getNumberOfWordsForBulletPoint(qualifications):
-    listWithoutUlElement = re.split(r"<ul>", qualifications, re.MULTILINE)
-    listWithoutUlEndElement = re.split(r"<\/ul>", listWithoutUlElement[1], re.MULTILINE)
-    listWithoutLiElements = re.split(r"<li>", listWithoutUlEndElement[0], re.MULTILINE|re.DOTALL)  
-    returnList = []
-    for listElement in listWithoutLiElements:
-        wordCount = 0
-        if listElement != "":            
-            wordList = re.findall(r"[A-Za-z0-9]+|[^A-Za-z0-9 ]", listElement, re.MULTILINE)
-            for word in wordList:
-                if re.match(r"[A-Za-z0-9]+", word) and word != "li" and word != "span":
-                    wordCount += 1                    
-            returnList.append(wordCount)
+def getNumberOfWordsForBulletPoint(qualifications):    
+    # We check whether there is a <ul>-element within the JSON-file or not. 
+    # If there is no <ul>-element that means there is no list at all and we return
+    # a list with 20 zero values
+    try:
+        returnList = []
+        listWithoutUlElement = re.split(r"<ul>", qualifications, re.MULTILINE|re.DOTALL)
+        listWithoutUlEndElement = re.split(r"<\/ul>", listWithoutUlElement[1], re.MULTILINE|re.DOTALL)
+        listWithoutLiElements = re.split(r"<li>", listWithoutUlEndElement[0], re.MULTILINE|re.DOTALL)          
+        for listElement in listWithoutLiElements:
+            wordCount = 0
+            if listElement != "":            
+                wordList = re.findall(r"[A-Za-z0-9]+|[^A-Za-z0-9 ]", listElement, re.MULTILINE)
+                for word in wordList:
+                    if re.match(r"[A-Za-z0-9]+", word) and word != "li" and word != "span":
+                        wordCount += 1                    
+                returnList.append(wordCount)    
+    except:
+        returnList = []
+    
     if(len(returnList) < 20):
         emptyCells = 20 - len(returnList)
         for _ in range(0, emptyCells, 1):
             returnList.append(0)
-    print(returnList)
     return returnList
 
 
 def processQualifications(qualifications):
     returnList = []
 
-    #TODO: Order the list elements
-
+    isBold = isSomethingBoldWithinBulletPoint(qualifications)
     numberOfListElements = getNumberOfListElements(qualifications)
     isBulletPointOccuring = isListWithBulletPoints(qualifications)
     wordList = getNumberOfWordsForBulletPoint(qualifications)
 
+    returnList.append(isBold)
     returnList.append(numberOfListElements)
     returnList.append(isBulletPointOccuring)
+    returnList.append(wordList)
     return returnList
 
 
 def processResponsibilities(responsibilities):
     returnList = []
 
-
-    #TODO: Order the list elements
-
+    isBold = isSomethingBoldWithinBulletPoint(responsibilities)
     numberOfListElements = getNumberOfListElements(responsibilities)
     isBulletPointOccuring = isListWithBulletPoints(responsibilities)
     wordList = getNumberOfWordsForBulletPoint(responsibilities)
 
+    returnList.append(isBold)
     returnList.append(numberOfListElements)
     returnList.append(isBulletPointOccuring)
+    returnList.append(wordList)
     return returnList
 
 
@@ -229,11 +236,8 @@ def processJSON(rawJsonFile):
     jobTitleInformation = processJobTitle(rawJsonFile["title"])      
     jobLocationInformation = processJobLocation(rawJsonFile["jobLocation"])
 
-    #TODO: Order the list elements of qualifications and responsibilities
-    #TODO: Calculate the Verhaeltnis Anzahl Stichpunkte Talent
-    #TODO: Test, whether the word calculation works properly
-    qualifications = processQualifications(rawJsonFile["qualifications"])
     responsibilities = processResponsibilities(rawJsonFile["responsibilities"])
+    qualifications = processQualifications(rawJsonFile["qualifications"])    
 
     dayPosted = rawJsonFile["datePosted"] # Day posted is currently not within the list
     dateLocation = rawJsonFile["date_location"]
@@ -243,8 +247,45 @@ def processJSON(rawJsonFile):
     returnList.extend(jobLocationInformation)
     returnList.extend(layoutInformation)
     returnList.extend(jobTitleInformation)
-    # print(returnList)
+    for _ in range(4):
+        returnList.append(None)
+
+
+    # TODO: Information about whether there is a subheader below the mission/talent section is still missing.
+    #       Until this is retrieved, I will put in a None value
+    returnList.append(None)
+
+    # There is only one column which needs to be filled. That is why I am checking if one of the two variables contains a 1 or 0
+    if responsibilities[0] == 0 and qualifications[0] == 0:
+        returnList.append(responsibilities[0])
+    elif responsibilities[0] != 0 and qualifications[0] == 0:
+        returnList.append(responsibilities[0])
+    else:
+        returnList.append(qualifications[0])
     
+    # Appending the number of found bulletpoints of the responsibilities section    
+    returnList.append(responsibilities[1]) 
+    # Appending the number of found bulletpoints of the qualifications section    
+    returnList.append(qualifications[1])    
+
+    # Number of bulletpoints for responsibilities / number of bulletpoints for qualifications
+    bulletpointRatio = str(responsibilities[1]) + "/" + str(qualifications[1])
+    # Appending the bulletpointRatio between responsibilities and qualifications
+    returnList.append(bulletpointRatio)
+
+    # Appending the information whether a bulletpoint occurs within the responsibilities section or not
+    returnList.append(responsibilities[2])
+    # Appending the information whether a bulletpoint occurs within the qualification section or not
+    returnList.append(qualifications[2])
+
+    # Appending the amount of words for each bulletpoint found within the responsibilities/qualifications section
+    for bulletPoint in responsibilities[3]:
+        returnList.append(bulletPoint)
+
+    for bulletPoint in qualifications[3]:
+        returnList.append(bulletPoint)
+
+    print(returnList)    
     return returnList
     
 
