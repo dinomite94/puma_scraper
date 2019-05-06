@@ -1,7 +1,9 @@
 #!/usr/local/bin/python3
 from openpyxl import workbook, load_workbook
+from openpyxl.comments import Comment
 from openpyxl.styles import Alignment
 from openpyxl.drawing.image import Image
+from openpyxl.utils import units
 
 from collections import namedtuple
 import os
@@ -35,7 +37,13 @@ def export(data_table):
                 column_num += 1
 
             return
-        elif isinstance(data, HyperLink):
+        elif isinstance(data, tuple) and not isinstance(data, HyperLink):
+            if data[1]:
+                cell.comment = Comment(data[1], 'Generator')
+                cell.comment.width = units.points_to_pixels(300)
+            data = data[0]
+
+        if isinstance(data, HyperLink):
             cell.value = data.text
             cell.hyperlink = data.link
             cell.style = 'Hyperlink'

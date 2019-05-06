@@ -138,7 +138,7 @@ def processJobTitle(jobTitle):
         'job_title_comma': commaValue,
         'job_title_dash': dashValue,
         'job_title_global': globOrInternational,
-        'job_title_abbreviation': buValue,
+        'job_title_bu': buValue,
         'job_title_gender': genderValue,
         'job_title_wanted': wantedValue,
         'job_title_puma': pumaValue,
@@ -146,7 +146,7 @@ def processJobTitle(jobTitle):
         'job_title_and': andValue,
     }
 
-def processJobLocation(jobLocation):
+def processJobLocation(jobLocation, html):
     #Extracts information about:
     #   - the city
     #   - the province (Information is not available within the JSON-file)
@@ -156,17 +156,31 @@ def processJobLocation(jobLocation):
     city = address["addressLocality"]
     country = address["addressCountry"]
 
+    province = re.search(r"<div[^<]+class=\"[^\"]*text-wrapper.*?\".*?>\s*<p[^<]+class=\"[^\"]*subline\">([^<]+)", html)
+
+    if province and len(province.groups()) >= 1:
+        province = province.group(1).split(', ')
+        if len(province) == 3:
+            province = province[1]
+        else:
+            province = None
+
     # returns the following list: (city, province, country) 
     # Province is not located within the JSON-file and must therefore be obtained in a different way.
     return {
         'city': city,
+        'province': province,
         'country': country,
     }
 
 
 def getNumberOfListElements(qualifications):
-    listElements = re.findall(r"<li>", qualifications, re.MULTILINE)
-    return len(listElements)
+    listElements = re.findall(r"<li>(.*?)<\/li>", qualifications, flags=re.MULTILINE)
+
+    if listElements:
+        return (len(listElements), "Stichpunkte:\n- " + re.sub(r"<[^<]+?>", "", "\n- ".join(listElements)))
+    else:
+        return (0, None)
 
 
 def isListWithBulletPoints(qualifications):
@@ -190,8 +204,9 @@ def getNumberOfWordsForBulletPoint(json, jsonType):
     returnList = []
     listWithoutLiElements = re.findall(r"<li>(.*?)<\/li>", json, flags=re.MULTILINE)
     for listElement in listWithoutLiElements:
-        wordList = re.findall(r"[\w\&]+", re.sub(r"<[^<]+?>", "", listElement), re.MULTILINE)
-        returnList.append(len(wordList))    
+        listElement = re.sub(r"<[^<]+?>", "", listElement)
+        wordList = re.findall(r"[\w\&]+", listElement, re.MULTILINE)
+        returnList.append((len(wordList), "Wörter: \n{}\n\nStichpunkt: \n{}".format(", ".join(wordList), listElement)))
     
     if jsonType == "responsibilities":
         maxLength = 35        
@@ -234,26 +249,41 @@ def processResponsibilities(responsibilities):
     }
 
 
+def processSubheadings(text):
+    isSubheading = re.search(r"<b>", text, re.MULTILINE)
+    if isSubheading:
+        return 1
+    return 0
+
+
 def openJSON(pathToJSON):    
     with open(pathToJSON) as file:        
         rawJsonFile = json.load(file)
         return rawJsonFile
 
 
-def processJSON(rawJsonFile):
+def openHTML(pathToHTML):
+    with open(pathToHTML) as file:
+        rawHtmlFile = ''.join(file.readlines())
+        return rawHtmlFile
+
+
+def process(rawJsonFile, rawHtmlFile=""):
     jobtitle = rawJsonFile["title"]
     layoutInformation = processLayoutInformation(rawJsonFile)
     jobTitleInformation = processJobTitle(rawJsonFile["title"])      
-    jobLocationInformation = processJobLocation(rawJsonFile["jobLocation"])
+    jobLocationInformation = processJobLocation(rawJsonFile["jobLocation"], rawHtmlFile)
 
     responsibilities = processResponsibilities(rawJsonFile["responsibilities"])
     qualifications = processQualifications(rawJsonFile["qualifications"])    
+    subheadings = processSubheadings(rawJsonFile["responsibilities"] + rawJsonFile["qualifications"])
 
     dayPosted = rawJsonFile["datePosted"]  # Day posted is currently not within the list
     dateLocation = rawJsonFile["date_location"]
     returnDict = {
         'job_title': jobtitle,
         'functional_area': dateLocation,
+        'mission_talent_subheadings': subheadings,
         **jobLocationInformation, **layoutInformation, **jobTitleInformation,
         **responsibilities, **qualifications}
 
@@ -263,9 +293,9 @@ def processJSON(rawJsonFile):
     del returnDict['mission_bold_text']
 
     # Number of bulletpoints for responsibilities / number of bulletpoints for qualifications
-    returnDict['talent_bullet_point_count_ratio'] = str(returnDict['mission_bullet_point_count']) + "/" + str(returnDict['talent_bullet_point_count'])
+    returnDict['talent_bullet_point_count_ratio'] = str(returnDict['mission_bullet_point_count'][0]) + "/" + str(returnDict['talent_bullet_point_count'][0])
 
-    print(returnDict)
+#    print(returnDict)
     return returnDict
     
 

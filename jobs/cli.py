@@ -49,15 +49,19 @@ def process(args):
 
     for filename in os.listdir(out_jobs_dir):
         if str.endswith(filename, '.json'):
-            full_filename = os.path.join(out_jobs_dir, filename)
-            with open(full_filename, 'r') as f:
-                fileid = os.path.basename('.'.join(filename.split('.')[:-1]))
-                row = extractor.processJSON(json.load(f))
-                row['screenshot_link'] = excel_exporter.HyperLink(text='Screenshot', link='{}.png'.format(fileid))
-                row['local_link'] = excel_exporter.HyperLink(text='Lokal', link='{}.html'.format(fileid))
-                row['online_link'] = excel_exporter.HyperLink(text='Online', link='https://about.puma.com/en/jobs/{}'.format(fileid))
+            fileid = os.path.basename('.'.join(filename.split('.')[:-1]))
 
-                data.append(row)
+            with open(os.path.join(out_jobs_dir, filename), 'r') as f:
+                rawJson = json.load(f)
+            with open(os.path.join(out_jobs_dir, fileid + '.html')) as f:
+                rawHtml = ''.join(f.readlines())
+
+            row = extractor.process(rawJson, rawHtml)
+            row['screenshot_link'] = excel_exporter.HyperLink(text='Screenshot', link='{}.png'.format(fileid))
+            row['local_link'] = excel_exporter.HyperLink(text='Lokal', link='{}.html'.format(fileid))
+            row['online_link'] = excel_exporter.HyperLink(text='Online', link='https://about.puma.com/en/jobs/{}'.format(fileid))
+
+            data.append(row)
 
     excel_exporter.export(data)
 
