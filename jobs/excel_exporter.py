@@ -5,8 +5,9 @@ from openpyxl.styles import Alignment
 from openpyxl.drawing.image import Image
 from openpyxl.utils import units
 
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 import os
+import re
 
 
 HyperLink = namedtuple('HyperLink', ['text', 'link'])
@@ -15,6 +16,7 @@ root_dir = os.path.dirname(os.path.realpath(__file__))
 template_xlsx = os.path.join(root_dir, 'templates/Auswertung Untersuchungskriterien.xlsx')
 output_xlsx = os.path.join(root_dir, 'out/jobs/Auswertung Untersuchungskriterien.xlsx')
 
+next_new_id_row = 5
 
 def export(data_table):
     xfile = load_workbook(template_xlsx)
@@ -56,14 +58,40 @@ def export(data_table):
             cell.alignment = Alignment(horizontal='left')
 
 
-    row_num = 5
+    ids = OrderedDict()
+    next_new_id_row = 5
+
+    extract_id_re = re.compile(r'r([0-9]+)[._]')
+    def extract_id(path):
+        match = extract_id_re.findall(path)
+
+        if match:
+            return match[0]
+
+    for row in sheet.iter_rows(min_row=next_new_id_row, min_col=2, max_col=2):
+        for cell in row:
+            if cell.hyperlink:
+                ids[extract_id(cell.hyperlink.target)] = cell.row
+                
+                if cell.row >= next_new_id_row:
+                    next_new_id_row = cell.row + 1
+
+    def get_row(id):
+        global next_new_id_row
+        row = ids.get(id, next_new_id_row)
+
+        if row == next_new_id_row:
+            next_new_id_row += 1
+
+        return row
+
     for row in data_table:
+        row_num = get_row(extract_id(row['screenshot_link'].link))
+
         for key, data in row.items():
             cell = sheet.cell(row=row_num, column=column_map[key])
 
             writeCell(cell, data)
-
-        row_num += 1
 
     xfile.save(output_xlsx)
 
