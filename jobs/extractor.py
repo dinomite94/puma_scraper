@@ -1,4 +1,4 @@
-#!/home/dino/anaconda3/bin/python
+#!/usr/bin/python3.6
 
 import json
 import re
@@ -206,7 +206,7 @@ def getNumberOfWordsForBulletPoint(json, jsonType):
     for listElement in listWithoutLiElements:
         listElement = re.sub(r"<[^<]+?>", "", listElement)
         wordList = re.findall(r"[\w\&]+", listElement, re.MULTILINE)
-        returnList.append((len(wordList), "Wörter: \n{}\n\nStichpunkt: \n{}".format(", ".join(wordList), listElement)))
+        returnList.append((len(wordList), "Woerter: \n{}\n\nStichpunkt: \n{}".format(", ".join(wordList), listElement)))
     
     if jsonType == "responsibilities":
         maxLength = 35        
@@ -256,6 +256,13 @@ def processSubheadings(text):
     return 0
 
 
+def getJobpostingID(jobPosting):
+    jobID = re.search(r"\b(r[0-9]+)\b", jobPosting, flags=re.MULTILINE|re.IGNORECASE)
+    if jobID:
+        return jobID.group(0)
+    return ""
+
+
 def openJSON(pathToJSON):    
     with open(pathToJSON) as file:        
         rawJsonFile = json.load(file)
@@ -269,6 +276,7 @@ def openHTML(pathToHTML):
 
 
 def process(rawJsonFile, rawHtmlFile=""):
+    jobID = getJobpostingID(rawJsonFile["occupationalCategory"])
     jobtitle = rawJsonFile["title"]
     layoutInformation = processLayoutInformation(rawJsonFile)
     jobTitleInformation = processJobTitle(rawJsonFile["title"])      
@@ -281,6 +289,7 @@ def process(rawJsonFile, rawHtmlFile=""):
     dayPosted = rawJsonFile["datePosted"]  # Day posted is currently not within the list
     dateLocation = rawJsonFile["date_location"]
     returnDict = {
+        'job_id' : jobID,
         'job_title': jobtitle,
         'functional_area': dateLocation,
         'mission_talent_subheadings': subheadings,
@@ -295,10 +304,10 @@ def process(rawJsonFile, rawHtmlFile=""):
     # Number of bulletpoints for responsibilities / number of bulletpoints for qualifications
     returnDict['talent_bullet_point_count_ratio'] = str(returnDict['mission_bullet_point_count'][0]) + "/" + str(returnDict['talent_bullet_point_count'][0])
 
-#    print(returnDict)
+    print(returnDict)
     return returnDict
     
 
 if __name__ == "__main__":
     rawJsonFile = openJSON("/home/dino/Desktop/puma/jobs/out/JSON files/r874.json")
-    outputJsonFile = processJSON(rawJsonFile)
+    outputJsonFile = process(rawJsonFile)
