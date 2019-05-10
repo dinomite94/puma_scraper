@@ -275,7 +275,10 @@ def openHTML(pathToHTML):
         return rawHtmlFile
 
 
-def process(rawJsonFile, rawHtmlFile=""):
+def process(rawJsonFile, rawHtmlFile="", matchWords=None):
+    if not matchWords:
+        matchWords = set()
+
     jobID = getJobpostingID(rawJsonFile["occupationalCategory"])
     jobtitle = rawJsonFile["title"]
     layoutInformation = processLayoutInformation(rawJsonFile)
@@ -303,6 +306,12 @@ def process(rawJsonFile, rawHtmlFile=""):
 
     # Number of bulletpoints for responsibilities / number of bulletpoints for qualifications
     returnDict['talent_bullet_point_count_ratio'] = str(returnDict['mission_bullet_point_count'][0]) + "/" + str(returnDict['talent_bullet_point_count'][0])
+
+
+    # Match feminine and masculin words
+    for matchWord in matchWords:
+        # matchWord.match_type == "feminin"|"maskulin"
+        returnDict[matchWord.column_name] = matchWord.match_value
 
     print(returnDict)
     return returnDict

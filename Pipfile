@@ -11,7 +11,7 @@ scrapy-splash = "*"
 beautifulsoup4 = "*"
 xlrd = "*"
 et-xmlfile = "*"
-openpyxl = "*"
+openpyxl = "2.6.*"
 jdcal = "*"
 
 [requires]

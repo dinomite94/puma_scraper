@@ -1,6 +1,6 @@
 #!/usr/local/bin/python3
 import argparse
-import excel_exporter
+import excel
 import extractor
 import json
 import os
@@ -47,6 +47,8 @@ def crawl(args):
 def process(args):
     data = []
 
+    exporter = excel.open()
+
     for filename in os.listdir(out_jobs_dir):
         if str.endswith(filename, '.json'):
             fileid = os.path.basename('.'.join(filename.split('.')[:-1]))
@@ -56,14 +58,14 @@ def process(args):
             with open(os.path.join(out_jobs_dir, fileid + '.html')) as f:
                 rawHtml = ''.join(f.readlines())
 
-            row = extractor.process(rawJson, rawHtml)
-            row['screenshot_link'] = excel_exporter.HyperLink(text='Screenshot', link='{}.png'.format(fileid))
-            row['local_link'] = excel_exporter.HyperLink(text='Lokal', link='{}.html'.format(fileid))
-            row['online_link'] = excel_exporter.HyperLink(text='Online', link='https://about.puma.com/en/jobs/{}'.format(fileid))
+            row = extractor.process(rawJson, rawHtml, exporter.match_words)
+            row['screenshot_link'] = excel.HyperLink(text='Screenshot', link='{}.png'.format(fileid))
+            row['local_link'] = excel.HyperLink(text='Lokal', link='{}.html'.format(fileid))
+            row['online_link'] = excel.HyperLink(text='Online', link='https://about.puma.com/en/jobs/{}'.format(fileid))
 
             data.append(row)
 
-    excel_exporter.export(data)
+    exporter.export(data)
 
 
 cmds = {
