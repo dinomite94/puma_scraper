@@ -1,4 +1,5 @@
 #!/usr/bin/python3.6
+# -*- coding: utf-8 -*-
 
 import json
 import re
@@ -36,6 +37,8 @@ globalMap = {
     "global" : 1
 }
 
+genderMentions = set(["All genders are welcome", "All gender are welcome", "Alle Geschlechter sind willkommen", "sess*", "sex*", "geslacht", "płeć"])
+
 def executeRegExWithMapping(regex, jobTitle, valuemap):
     searchResult = re.search(regex, jobTitle, re.IGNORECASE)    
     if searchResult:
@@ -46,11 +49,14 @@ def executeRegExWithMapping(regex, jobTitle, valuemap):
         returnValue = 99
     return returnValue
 
-def executeRegExForOccuranceChecks(regex, jobTitle):
+def executeRegExForOccuranceChecks(regex, jobTitle, comment=False):
     # Returns 1 if something was found, else 0
     searchValue = re.search(regex, jobTitle, re.IGNORECASE)    
     if searchValue:
-        return 1    
+        if comment:
+            return (1, searchValue.group(0))
+        else:
+            return 1
     return 0
 
 def processLayoutInformation(rawJsonFile):
@@ -206,7 +212,7 @@ def getNumberOfWordsForBulletPoint(json, jsonType):
     for listElement in listWithoutLiElements:
         listElement = re.sub(r"<[^<]+?>", "", listElement)
         wordList = re.findall(r"[\w\&]+", listElement, re.MULTILINE)
-        returnList.append((len(wordList), "Woerter: \n{}\n\nStichpunkt: \n{}".format(", ".join(wordList), listElement)))
+        returnList.append((len(wordList), "Wörter: \n{}\n\nStichpunkt: \n{}".format(", ".join(wordList), listElement)))
     
     if jsonType == "responsibilities":
         maxLength = 35        
@@ -263,6 +269,34 @@ def getJobpostingID(jobPosting):
     return ""
 
 
+def wordRegex(word):
+    return r'\b' + word.replace(r'*', r'.*?') + r'\b'
+
+
+def matchWordPrefixes(prefixes, text):
+    returnDict = {}
+    masculine_words = []
+    feminine_words = []
+
+    for p in prefixes:
+        pattern = wordRegex(p.match_value)
+        matches = re.findall(pattern, text, flags=re.IGNORECASE)
+
+        if matches:
+            returnDict[p.column_name] = (len(matches), 'Wörter:\n' + ', '.join(matches))
+            if p.match_type == 'maskulin':
+                masculine_words.extend(matches)
+            elif p.match_type == 'feminin':
+                feminine_words.extend(matches)
+        else:
+            returnDict[p.column_name] = 0
+
+    returnDict['masculine_word_count'] = (len(masculine_words), 'Wörter:\n' + ', '.join(masculine_words)) if masculine_words else 0
+    returnDict['feminine_word_count'] = (len(feminine_words), 'Wörter:\n' + ', '.join(feminine_words)) if feminine_words else 0
+
+    return returnDict
+
+
 def openJSON(pathToJSON):    
     with open(pathToJSON) as file:        
         rawJsonFile = json.load(file)
@@ -309,11 +343,14 @@ def process(rawJsonFile, rawHtmlFile="", matchWords=None):
 
 
     # Match feminine and masculin words
-    for matchWord in matchWords:
-        # matchWord.match_type == "feminin"|"maskulin"
-        returnDict[matchWord.column_name] = matchWord.match_value
+    matchText = rawJsonFile['responsibilities'] + rawJsonFile['qualifications']
+    returnDict.update(matchWordPrefixes(matchWords, matchText))
 
-    print(returnDict)
+    genderMentionRegex = '|'.join([wordRegex(gm) for gm in genderMentions])
+    returnDict['mission_gender'] = executeRegExForOccuranceChecks(genderMentionRegex, rawJsonFile['responsibilities'], comment=True)
+    returnDict['talent_gender'] = executeRegExForOccuranceChecks(genderMentionRegex, rawJsonFile['qualifications'], comment=True)
+
+    # print(returnDict)
     return returnDict
     
 
