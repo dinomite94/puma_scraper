@@ -37,7 +37,7 @@ globalMap = {
     "global" : 1
 }
 
-genderMentions = set(["All genders are welcome", "All gender are welcome", "Alle Geschlechter sind willkommen", "sess*", "sex*", "geslacht", "płeć"])
+genderMentions = set(["gender*", "Geschlecht*", "sess*", "sex*", "género*", "geslacht*", "seks*", "płeć*"])
 
 def executeRegExWithMapping(regex, jobTitle, valuemap):
     searchResult = re.search(regex, jobTitle, re.IGNORECASE)    
